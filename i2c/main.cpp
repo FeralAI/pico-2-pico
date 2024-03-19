@@ -11,7 +11,7 @@
 #define LOGD(size, diff) printf("%i, %llu\n", diff, size)
 #define LOGD_H() printf("size, micros\n");
 
-#define I2C_SLAVE_ADDR 0x17
+#define I2C_SLAVE_ADDR 0xCE
 
 // #define I2C_BAUDRATE 100000 // 100 kHz
 // #define I2C_BAUDRATE 400000 // 400 kHz
@@ -99,6 +99,8 @@ void setup_master() {
 }
 
 void loop_master() {
+	static uint32_t nextRunTime = 0;
+
 	LOGD_H();
 	I2CData data;
 
@@ -107,7 +109,10 @@ void loop_master() {
 		data.timestamp = NOW();
 		i2c_write_blocking(i2c1, I2C_SLAVE_ADDR, (uint8_t *)&data, sizeof(I2CData), false);
 
-		sleep_ms(1000);
+		while (((int32_t)(to_ms_since_boot(get_absolute_time()) - nextRunTime)) < 1000)
+			tight_loop_contents();
+
+		nextRunTime = to_ms_since_boot(get_absolute_time());
 	}
 }
 
@@ -122,7 +127,6 @@ int main() {
 	printf("I2C Master/Slave example\n");
 	printf("I2C rate set to %u KHz\n", I2C_BAUDRATE / 1000);
 	printf("Starting I2C transfer\n");
-	sleep_ms(1000);
 
 	loop_master();
 }
